@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>A Candle Between Us</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  background: #ffffff;
+  font-family: 'Playfair Display', serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #111;
+}
+
+#countdown {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+#countdown p {
+  font-style: italic;
+  margin: 0 0 6px;
+}
+
+#timer {
+  font-size: 1.4rem;
+}
+
+svg {
+  width: 300px;
+}
+
+#message {
+  display: none;
+  opacity: 0;
+  margin-top: 28px;
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.6;
+  transition: opacity 1.5s ease;
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="countdown">
+  <p>Let us countdown together.</p>
+  <div id="timer"></div>
+</div>
+
+<!-- CAKE SVG -->
+<svg viewBox="0 0 200 320">
+
+  <!-- Flame -->
+  <path id="flame"
+    d="M100 25
+       C92 40, 92 55, 100 60
+       C108 55,108 40,100 25Z"
+    fill="none"
+    stroke="#000"
+    stroke-width="1.5"
+    style="opacity:0" />
+
+  <!-- Candle -->
+  <line x1="100" y1="60" x2="100" y2="110"
+        stroke="#000" stroke-width="2" />
+
+  <!-- Cake Top -->
+  <ellipse cx="100" cy="120" rx="60" ry="10"
+           fill="none" stroke="#000" stroke-width="2"/>
+
+  <!-- Drips -->
+  <path d="M40 120
+           C45 135, 55 135, 60 120
+           C65 135, 75 135, 80 120
+           C85 135, 95 135, 100 120
+           C105 135,115 135,120 120
+           C125 135,135 135,140 120"
+        fill="none" stroke="#000" stroke-width="2"/>
+
+  <!-- Cake Body -->
+  <rect x="40" y="120" width="120" height="80" rx="4"
+        fill="none" stroke="#000" stroke-width="2"/>
+
+  <!-- Plate -->
+  <ellipse cx="100" cy="205" rx="70" ry="10"
+           fill="none" stroke="#000" stroke-width="2"/>
+
+  <!-- Stand -->
+  <path d="M90 205 L110 205 L120 260 Q100 270 80 260 Z"
+        fill="none" stroke="#000" stroke-width="2"/>
+
+</svg>
+
+<div id="message">
+  <p>
+    No matter the distance, we'll always be together,<br>
+    in anything and everything.<br>
+    I love you.
+    Happy New Year, my love. <span style="color:black; font-size:24px;">♡</span>
+
+  </p>
+  <p><em>Love,<br>Anagha.</em></p>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+/* ---------------- URL STATE ---------------- */
+const params = new URLSearchParams(window.location.search);
+const isLit = params.get("lit") === "true";
+
+const flame = document.getElementById("flame");
+if (isLit) flame.style.opacity = "1";
+
+/* ---------------- COUNTDOWN (UK TIME) ---------------- */
+const target = new Date("2025-12-31T00:00:00Z"); // CHANGE DATE IF NEEDED
+const timerEl = document.getElementById("timer");
+
+function updateCountdown() {
+  const now = new Date();
+  const diff = target - now;
+
+  if (diff <= 0) {
+    timerEl.textContent = "00:00:00";
+    return;
+  }
+
+  const h = Math.floor(diff / 36e5);
+  const m = Math.floor((diff % 36e5) / 6e4);
+  const s = Math.floor((diff % 6e4) / 1000);
+
+  timerEl.textContent =
+    `${String(h).padStart(2,"0")}:` +
+    `${String(m).padStart(2,"0")}:` +
+    `${String(s).padStart(2,"0")}`;
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+/* ---------------- BLOW DETECTION ---------------- */
+let blown = false;
+
+async function listenForBlow() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = new AudioContext();
+    const mic = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    mic.connect(analyser);
+
+    const data = new Uint8Array(analyser.fftSize);
+
+    function detect() {
+      analyser.getByteTimeDomainData(data);
+      let volume = data.reduce((a,b)=>a+Math.abs(b-128),0)/data.length;
+
+      if (volume > 20 && !blown && isLit) {
+        blown = true;
+        blowOut();
+      }
+      requestAnimationFrame(detect);
+    }
+    detect();
+  } catch(e) {
+    console.log("Mic permission denied");
+  }
+}
+
+function blowOut() {
+  flame.style.opacity = "0";
+
+  const msg = document.getElementById("message");
+  msg.style.display = "block";
+
+  msg.offsetHeight; // force reflow
+  msg.style.opacity = "1";
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 180,
+      spread: 80,
+      origin: { y: 0.6 }
+    });
+  }, 500);
+}
+
+if (isLit) listenForBlow();
+</script>
+
+</body>
+</html>
