@@ -113,7 +113,7 @@ canvas {
     No matter the distance, we'll always be together,<br>
     in anything and everything.<br>
     I love you.
-    Happy New Year, my love. <span style="color:black; font-size:24px;">♡</span>
+    <br>Happy New Year, my love. <span style="color:black; font-size:24px;">♡</span>
 
   </p>
   <p><em>Love,<br>Anagha.</em></p>
@@ -132,12 +132,40 @@ const flame = document.getElementById("flame");
 if (isLit) flame.style.opacity = "1";
 
 /* ---------------- COUNTDOWN (UK TIME) ---------------- */
-const target = new Date("2025-12-31T00:00:00Z"); // CHANGE DATE IF NEEDED
 const timerEl = document.getElementById("timer");
 
+/* Get current UK time as a Date object */
+function getUKNow() {
+  const ukTimeString = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(new Date());
+
+  // Convert "DD/MM/YYYY, HH:MM:SS" → ISO
+  const [date, time] = ukTimeString.split(", ");
+  const [dd, mm, yyyy] = date.split("/");
+  return new Date(`${yyyy}-${mm}-${dd}T${time}`);
+}
+
+/* Get next UK midnight */
+function getNextUKMidnight() {
+  const nowUK = getUKNow();
+  const midnightUK = new Date(nowUK);
+  midnightUK.setHours(24, 0, 0, 0);
+  return midnightUK;
+}
+
+let target = getNextUKMidnight();
+
 function updateCountdown() {
-  const now = new Date();
-  const diff = target - now;
+  const nowUK = getUKNow();
+  const diff = target - nowUK;
 
   if (diff <= 0) {
     timerEl.textContent = "00:00:00";
